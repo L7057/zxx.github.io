@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生成绩管理系统</title>
+    <!-- 引入Bootstrap样式（简化界面开发） -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 页面基础样式 */
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1;
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+        /* 模块隐藏/显示控制 */
+        .module {
+            display: none;
+        }
+        .module.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* 表格样式优化 */
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">学生成绩管理系统</a>
+            <div class="navbar-nav ms-auto" id="userInfo">
+                <!-- 未登录时显示 -->
+                <button class="btn btn-light me-2" onclick="showModule('loginModule')">登录</button>
+                <button class="btn btn-light" onclick="showModule('registerModule')">注册</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="container">
+        <!-- 1. 注册模块 -->
+        <div id="registerModule" class="module card p-4 shadow-sm">
+            <h3 class="card-title text-center mb-4">用户注册</h3>
+            <form id="registerForm">
+                <div class="mb-3">
+                    <label for="regUsername" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="regUsername" placeholder="请输入用户名" required>
+                </div>
+                <div class="mb-3">
+                    <label for="regPwd" class="form-label">密码</label>
+                    <input type="password" class="form-control" id="regPwd" placeholder="请输入密码（6-16位）" required>
+                </div>
+                <div class="mb-3">
+                    <label for="regPwdConfirm" class="form-label">确认密码</label>
+                    <input type="password" class="form-control" id="regPwdConfirm" placeholder="请再次输入密码" required>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">注册</button>
+                    <button type="button" class="btn btn-secondary" onclick="showModule('loginModule')">已有账号？去登录</button>
+                </div>
+                <div id="registerMsg" class="mt-3 text-center text-danger"></div>
+            </form>
+        </div>
+
+        <!-- 2. 登录模块 -->
+        <div id="loginModule" class="module card p-4 shadow-sm">
+            <h3 class="card-title text-center mb-4">用户登录</h3>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="loginUsername" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="loginUsername" placeholder="请输入用户名" required>
+                </div>
+                <div class="mb-3">
+                    <label for="loginPwd" class="form-label">密码</label>
+                    <input type="password" class="form-control" id="loginPwd" placeholder="请输入密码" required>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">登录</button>
+                    <button type="button" class="btn btn-secondary" onclick="showModule('registerModule')">没有账号？去注册</button>
+                </div>
+                <div id="loginMsg" class="mt-3 text-center text-danger"></div>
+            </form>
+        </div>
+
+        <!-- 3. 系统主功能模块（登录后显示） -->
+        <div id="mainModule" class="module">
+            <!-- 功能导航 -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" onclick="showSubModule('changePwdSubModule')">修改密码</button>
+                    <button class="btn btn-primary" onclick="showSubModule('addGradeSubModule')">添加学生成绩</button>
+                    <button class="btn btn-primary" onclick="showSubModule('statGradeSubModule')">按班级统计成绩</button>
+                    <button class="btn btn-primary" onclick="showSubModule('filterStudentSubModule')">筛选不合格/优秀学生</button>
+                    <button class="btn btn-danger ms-auto" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+
+            <!-- 3.1 修改密码子模块 -->
+            <div id="changePwdSubModule" class="sub-module card p-4 shadow-sm">
+                <h3 class="card-title mb-4">修改密码</h3>
+                <form id="changePwdForm">
+                    <div class="mb-3">
+                        <label for="oldPwd" class="form-label">旧密码</label>
+                        <input type="password" class="form-control" id="oldPwd" placeholder="请输入旧密码" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPwd" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPwd" placeholder="请输入新密码（6-16位）" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPwdConfirm" class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="newPwdConfirm" placeholder="请再次输入新密码" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交修改</button>
+                    <div id="changePwdMsg" class="mt-3 text-center text-danger"></div>
+                </form>
+            </div>
+
+            <!-- 3.2 添加学生成绩子模块 -->
+            <div id="addGradeSubModule" class="sub-module card p-4 shadow-sm">
+                <h3 class="card-title mb-4">添加学生成绩</h3>
+                <form id="addGradeForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="studentName" class="form-label">学生姓名</label>
+                            <input type="text" class="form-control" id="studentName" placeholder="请输入姓名" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="studentClass" class="form-label">班级</label>
+                            <input type="text" class="form-control" id="studentClass" placeholder="如：电子1234" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="subject" class="form-label">科目</label>
+                            <input type="text" class="form-control" id="subject" placeholder="如：高等数学" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="score" class="form-label">成绩（0-100）</label>
+                            <input type="number" class="form-control" id="score" min="0" max="100" placeholder="请输入成绩" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">添加成绩</button>
+                    <div id="addGradeMsg" class="mt-3 text-center text-success"></div>
+                </form>
+            </div>
+
+            <!-- 3.3 按班级统计成绩子模块 -->
+            <div id="statGradeSubModule" class="sub-module card p-4 shadow-sm">
+                <h3 class="card-title mb-4">按班级统计各科成绩</h3>
+                <div class="mb-3">
+                    <label for="statClass" class="form-label">请输入班级</label>
+                    <div class="d-flex gap-3">
+                        <input type="text" class="form-control" id="statClass" placeholder="如：电子1234" required>
+                        <button class="btn btn-primary" onclick="statGradeByClass()">开始统计</button>
+                    </div>
+                </div>
+                <div id="statResult" class="mt-3">
+                    <h5 class="text-center d-none" id="statTitle">统计结果</h5>
+                    <div class="table-container">
+                        <table class="table table-striped table-hover d-none" id="statTable">
+                            <thead class="table-dark sticky-top top-0">
+                                <tr>
+                                    <th>科目</th>
+                                    <th>平均分</th>
+                                    <th>最高分</th>
+                                    <th>最低分</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="statEmptyMsg" class="text-center text-muted mt-3 d-none">该班级暂无成绩数据</div>
+                </div>
+            </div>
+
+            <!-- 3.4 筛选不合格/优秀学生子模块 -->
+            <div id="filterStudentSubModule" class="sub-module card p-4 shadow-sm">
+                <h3 class="card-title mb-4">筛选学生（不合格：<60分；优秀：≥85分）</h3>
+                <div class="mb-3">
+                    <label for="filterClass" class="form-label">请输入班级（留空查询所有班级）</label>
+                    <div class="d-flex gap-3">
+                        <input type="text" class="form-control" id="filterClass" placeholder="如：电子1234">
+                        <button class="btn btn-primary" onclick="filterStudents()">开始筛选</button>
+                    </div>
+                </div>
+
+                <!-- 不合格学生表格 -->
+                <div class="mt-5">
+                    <h5>不合格学生列表</h5>
+                    <div class="table-container">
+                        <table class="table table-striped table-hover" id="failedTable">
+                            <thead class="table-danger sticky-top top-0">
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>班级</th>
+                                    <th>科目</th>
+                                    <th>成绩</th>
+                                </tr>
+                            </thead>
+                            <tbody id="failedTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="failedEmptyMsg" class="text-center text-muted">暂无不合格学生</div>
+                </div>
+
+                <!-- 优秀学生表格 -->
+                <div class="mt-5">
+                    <h5>优秀学生列表</h5>
+                    <div class="table-container">
+                        <table class="table table-striped table-hover" id="excellentTable">
+                            <thead class="table-success sticky-top top-0">
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>班级</th>
+                                    <th>科目</th>
+                                    <th>成绩</th>
+                                </tr>
+                            </thead>
+                            <tbody id="excellentTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="excellentEmptyMsg" class="text-center text-muted">暂无优秀学生</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white text-center py-3">
+        <div class="container">
+            <p class="mb-0">© 2024 学生成绩管理系统 | 广东海洋大学电子与信息工程学院</p>
+        </div>
+    </footer>
+
+    <!-- 引入Bootstrap和JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 初始化：页面加载时检查登录状态，默认显示登录模块
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            showModule('loginModule');
+            // 默认显示第一个子模块（修改密码）
+            showSubModule('changePwdSubModule');
+        });
+
+        // 1. 模块切换（注册/登录/主功能）
+        function showModule(moduleId) {
+            // 隐藏所有模块
+            document.querySelectorAll('.module').forEach(module => {
+                module.classList.remove('active');
+            });
+            // 显示目标模块
+            document.getElementById(moduleId).classList.add('active');
+        }
+
+        // 2. 主功能子模块切换（修改密码/添加成绩等）
+        function showSubModule(subModuleId) {
+            // 隐藏所有子模块
+            document.querySelectorAll('.sub-module').forEach(subModule => {
+                subModule.style.display = 'none';
+            });
+            // 显示目标子模块
+            document.getElementById(subModuleId).style.display = 'block';
+        }
+
+        // 3. 本地存储工具函数（用户数据+成绩数据）
+        const Storage = {
+            // 用户数据（key: users，格式：[{username: 'xxx', password: 'xxx'}]）
+            getUsers() {
+                return JSON.parse(localStorage.getItem('gradeSystemUsers')) || [];
+            },
+            saveUser(user) {
+                const users = this.getUsers();
+                users.push(user);
+                localStorage.setItem('gradeSystemUsers', JSON.stringify(users));
+            },
+            findUser(username) {
+                const users = this.getUsers();
+                return users.find(user => user.username === username);
+            },
+            updateUserPassword(username, newPassword) {
+                const users = this.getUsers();
+                const index = users.findIndex(user => user.username === username);
+                if (index !== -1) {
+                    users[index].password = newPassword;
+                    localStorage.setItem('gradeSystemUsers', JSON.stringify(users));
+                    return true;
+                }
+                return false;
+            },
+
+            // 成绩数据（key: grades，格式：[{name: 'xxx', class: 'xxx', subject: 'xxx', score: 80}]）
+            getGrades() {
+                return JSON.parse(localStorage.getItem('gradeSystemGrades')) || [];
+            },
+            saveGrade(grade) {
+                const grades = this.getGrades();
+                grades.push(grade);
+                localStorage.setItem('gradeSystemGrades', JSON.stringify(grades));
+            },
+            getGradesByClass(className) {
+                const grades = this.getGrades();
+                return className ? grades.filter(g => g.class === className) : grades;
+            }
+        };
+
+        // 4. 密码加密（简单哈希，模拟安全存储）
+        function encryptPassword(password) {
+            // 使用SHA-256哈希（需转换为十六进制字符串）
+            return CryptoJS.SHA256(password).toString();
+        }
+        // 引入CryptoJS（用于密码哈希，CDN加载）
+        const cryptoScript = document.createElement('script');
+        cryptoScript.src = 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js';
+        document.head.appendChild(cryptoScript);
+
+        // 5. 注册功能
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const pwd = document.getElementById('regPwd').value;
+            const pwdConfirm = document.getElementById('regPwdConfirm').value;
+            const msgEl = document.getElementById('registerMsg');
+
+            // 验证逻辑
+            if (pwd.length < 6 || pwd.length > 16) {
+                msgEl.textContent = '密码长度必须为6-16位！';
+                return;
+            }
+            if (pwd !== pwdConfirm) {
+                msgEl.textContent = '两次密码输入不一致！';
+                return;
+            }
+            if (Storage.findUser(username)) {
+                msgEl.textContent = '用户名已存在！';
+                return;
+            }
+
+            // 保存用户（密码加密）
+            const encryptedPwd = encryptPassword(pwd);
+            Storage.saveUser({ username, password: encryptedPwd });
+            
+            // 注册成功，跳转登录
+            msgEl.className = 'mt-3 text-center text-success';
+            msgEl.textContent = '注册成功！即将跳转到登录页面...';
+            setTimeout(() => {
+                showModule('loginModule');
+                this.reset(); // 重置表单
+            }, 1500);
+        });
+
+        // 6. 登录功能
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const pwd = document.getElementById('loginPwd').value;
+            const msgEl = document.getElementById('loginMsg');
+
+            // 验证用户
+            const user = Storage.findUser(username);
+            if (!user) {
+                msgEl.textContent = '用户名不存在！';
+                return;
+            }
+            const encryptedPwd = encryptPassword(pwd);
+            if (user.password !== encryptedPwd) {
+                msgEl.textContent = '密码错误！';
+                return;
+            }
+
+            // 登录成功：保存登录状态，切换到主模块
+            localStorage.setItem('gradeSystemLoginUser', username);
+            updateUserInfo();
+            showModule('mainModule');
+            this.reset();
+        });
+
+        // 7. 退出登录
+        function logout() {
+            localStorage.removeItem('gradeSystemLoginUser');
+            updateUserInfo();
+            showModule('loginModule');
+        }
+
+        // 8. 更新导航栏用户信息（登录/未登录状态）
+        function updateUserInfo() {
+            const loginUser = localStorage.getItem('gradeSystemLoginUser');
+            const userInfoEl = document.getElementById('userInfo');
+            
+            if (loginUser) {
+                // 已登录：显示用户名和退出按钮
+                userInfoEl.innerHTML = `
+                    <span class="nav-link text-white">当前用户：${loginUser}</span>
+                    <button class="btn btn-light" onclick="logout()">退出登录</button>
+                `;
+            } else {
+                // 未登录：显示登录/注册按钮
+                userInfoEl.innerHTML = `
+                    <button class="btn btn-light me-2" onclick="showModule('loginModule')">登录</button>
+                    <button class="btn btn-light" onclick="showModule('registerModule')">注册</button>
+                `;
+            }
+        }
+
+        // 9. 检查登录状态（页面刷新时调用）
+        function checkLoginStatus() {
+            const loginUser = localStorage.getItem('gradeSystemLoginUser');
+            if (loginUser) {
+                updateUserInfo();
+                showModule('mainModule');
+            }
+        }
+
+        // 10. 修改密码功能
+        document.getElementById('changePwdForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const loginUser = localStorage.getItem('gradeSystemLoginUser');
+            const oldPwd = document.getElementById('oldPwd').value;
+            const newPwd = document.getElementById('newPwd').value;
+            const newPwdConfirm = document.getElementById('newPwdConfirm').value;
+            const msgEl = document.getElementById('changePwdMsg');
+
+            // 验证逻辑
+            if (!loginUser) {
+                msgEl.textContent = '请先登录！';
+                return;
+            }
+            const user = Storage.findUser(loginUser);
+            const encryptedOldPwd = encryptPassword(oldPwd);
+            if (user.password !== encryptedOldPwd) {
+                msgEl.textContent = '旧密码错误！';
+                return;
+            }
+            if (newPwd.length < 6 || newPwd.length > 16) {
+                msgEl.textContent = '新密码长度必须为6-16位！';
+                return;
+            }
+            if (newPwd !== newPwdConfirm) {
+                msgEl.textContent = '两次新密码输入不一致！';
+                return;
+            }
+
+            // 更新密码
+            const encryptedNewPwd = encryptPassword(newPwd);
+            Storage.updateUserPassword(loginUser, encryptedNewPwd);
+            
+            // 修改成功
+            msgEl.className = 'mt-3 text-center text-success';
+            msgEl.textContent = '密码修改成功！';
+            this.reset();
+            setTimeout(() => msgEl.textContent = '', 2000);
+        });
+
+        // 11. 添加学生成绩功能
+        document.getElementById('addGradeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('studentName').value.trim();
+            const className = document.getElementById('studentClass').value.trim();
+            const subject = document.getElementById('subject').value.trim();
+            const score = parseInt(document.getElementById('score').value);
+            const msgEl = document.getElementById('addGradeMsg');
+
+            // 验证逻辑
+            if (!name || !className || !subject) {
+                msgEl.textContent = '姓名、班级、科目不能为空！';
+                msgEl.className = 'mt-3 text-center text-danger';
+                return;
+            }
+            if (isNaN(score) || score < 0 || score > 100) {
+                msgEl.textContent = '成绩必须是0-100之间的数字！';
+                msgEl.className = 'mt-3 text-center text-danger';
+                return;
+            }
+
+            // 保存成绩
+            Storage.saveGrade({
+                name,
+                class: className,
+                subject,
+                score
+            });
+
+            // 添加成功
+            msgEl.textContent = '成绩添加成功！';
+            msgEl.className = 'mt-3 text-center text-success';
+            this.reset();
+            setTimeout(() => msgEl.textContent = '', 2000);
+        });
+
+        // 12. 按班级统计成绩功能
+        function statGradeByClass() {
+            const className = document.getElementById('statClass').value.trim();
+            const grades = Storage.getGradesByClass(className);
+            const statTableBody = document.getElementById('statTableBody');
+            const statTitle = document.getElementById('statTitle');
+            const statTable = document.getElementById('statTable');
+            const statEmptyMsg = document.getElementById('statEmptyMsg');
+
+            // 清空之前的统计结果
+            statTableBody.innerHTML = '';
+            statTitle.classList.add('d-none');
+            statTable.classList.add('d-none');
+            statEmptyMsg.classList.add('d-none');
+
+            // 无数据处理
+            if (grades.length === 0) {
+                statEmptyMsg.classList.remove('d-none');
+                return;
+            }
+
+            // 按科目分组统计
+            const subjectStats = {};
+            grades.forEach(grade => {
+                if (!subjectStats[grade.subject]) {
+                    subjectStats[grade.subject] = {
+                        total: 0,
+                        count: 0,
+                        max: grade.score,
+                        min: grade.score
+                    };
+                }
+                const stat = subjectStats[grade.subject];
+                stat.total += grade.score;
+                stat.count += 1;
+                stat.max = Math.max(stat.max, grade.score);
+                stat.min = Math.min(stat.min, grade.score);
+            });
+
+            // 渲染统计表格
+            statTitle.classList.remove('d-none');
+            statTable.classList.remove('d-none');
+            for (const [subject, stat] of Object.entries(subjectStats)) {
+                const avg = (stat.total / stat.count).toFixed(1); // 平均分保留1位小数
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${subject}</td>
+                    <td>${avg}</td>
+                    <td>${stat.max}</td>
+                    <td>${stat.min}</td>
+                `;
+                statTableBody.appendChild(tr);
+            }
+        }
+
+        // 13. 筛选不合格/优秀学生功能
+        function filterStudents() {
+            const className = document.getElementById('filterClass').value.trim();
+            const grades = Storage.getGradesByClass(className);
+            const failedTableBody = document.getElementById('failedTableBody');
+            const excellentTableBody = document.getElementById('excellentTableBody');
+            const failedEmptyMsg = document.getElementById('failedEmptyMsg');
+            const excellentEmptyMsg = document.getElementById('excellentEmptyMsg');
+
+            // 清空之前的筛选结果
+            failedTableBody.innerHTML = '';
+            excellentTableBody.innerHTML = '';
+            failedEmptyMsg.classList.add('d-none');
+            excellentEmptyMsg.classList.add('d-none');
+
+            // 分类筛选（不合格：<60；优秀：≥85）
+            const failedGrades = grades.filter(g => g.score < 60);
+            const excellentGrades = grades.filter(g => g.score >= 85);
+
+            // 渲染不合格学生表格
+            if (failedGrades.length === 0) {
+                failedEmptyMsg.classList.remove('d-none');
+            } else {
+                failedGrades.forEach(grade => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${grade.name}</td>
+                        <td>${grade.class}</td>
+                        <td>${grade.subject}</td>
+                        <td>${grade.score}</td>
+                    `;
+                    failedTableBody.appendChild(tr);
+                });
+            }
+
+            // 渲染优秀学生表格
+            if (excellentGrades.length === 0) {
+                excellentEmptyMsg.classList.remove('d-none');
+            } else {
+                excellentGrades.forEach(grade => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${grade.name}</td>
+                        <td>${grade.class}</td>
+                        <td>${grade.subject}</td>
+                        <td>${grade.score}</td>
+                    `;
+                    excellentTableBody.appendChild(tr);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

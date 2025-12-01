@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页拼图游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        h1, h2, h3 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+        }
+        .btn-secondary:hover {
+            background-color: #0b7dda;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            border: 2px solid #333;
+            padding: 5px;
+            background-color: #eee;
+        }
+        .puzzle-piece {
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .puzzle-piece.empty {
+            background-color: transparent;
+            cursor: default;
+        }
+        .puzzle-piece:hover:not(.empty) {
+            background-color: #45a049;
+        }
+        .info {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .rank-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .rank-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rank-item:first-child {
+            background-color: #fff8e1;
+            font-weight: bold;
+        }
+        .rank-item:nth-child(2) {
+            background-color: #f5f5f5;
+        }
+        .rank-item:nth-child(3) {
+            background-color: #ffebee;
+        }
+        .error {
+            color: #f44336;
+            text-align: center;
+            margin: 10px 0;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="container">
+        <div id="loginPage" class="page active">
+            <h1>拼图游戏 - 登录</h1>
+            <div class="error" id="loginError"></div>
+            <div class="form-group">
+                <label for="loginUsername">用户名</label>
+                <input type="text" id="loginUsername" placeholder="请输入用户名" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码" required>
+            </div>
+            <button onclick="login()">登录</button>
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="switchPage('registerPage')">注册账号</button>
+                <button class="btn-secondary" onclick="switchPage('changePwdPage')">修改密码</button>
+            </div>
+        </div>
+
+        <!-- 注册页面 -->
+        <div id="registerPage" class="page">
+            <h1>拼图游戏 - 注册</h1>
+            <div class="error" id="registerError"></div>
+            <div class="form-group">
+                <label for="regUsername">用户名</label>
+                <input type="text" id="regUsername" placeholder="请设置用户名" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">密码</label>
+                <input type="password" id="regPassword" placeholder="请设置密码" required>
+            </div>
+            <div class="form-group">
+                <label for="regConfirmPwd">确认密码</label>
+                <input type="password" id="regConfirmPwd" placeholder="请再次输入密码" required>
+            </div>
+            <button onclick="register()">注册</button>
+            <button class="btn-secondary" onclick="switchPage('loginPage')">返回登录</button>
+        </div>
+
+        <!-- 修改密码页面 -->
+        <div id="changePwdPage" class="page">
+            <h1>拼图游戏 - 修改密码</h1>
+            <div class="error" id="changePwdError"></div>
+            <div class="form-group">
+                <label for="changeUsername">用户名</label>
+                <input type="text" id="changeUsername" placeholder="请输入用户名" required>
+            </div>
+            <div class="form-group">
+                <label for="oldPassword">原密码</label>
+                <input type="password" id="oldPassword" placeholder="请输入原密码" required>
+            </div>
+            <div class="form-group">
+                <label for="newPassword">新密码</label>
+                <input type="password" id="newPassword" placeholder="请设置新密码" required>
+            </div>
+            <button onclick="changePassword()">确认修改</button>
+            <button class="btn-secondary" onclick="switchPage('loginPage')">返回登录</button>
+        </div>
+
+        <!-- 游戏页面 -->
+        <div id="gamePage" class="page">
+            <h1>拼图游戏</h1>
+            <div class="info">
+                用户名: <span id="currentUser"></span> | 用时: <span id="timer">00:00</span>
+            </div>
+            <div class="puzzle-container" id="puzzleContainer"></div>
+            <div class="btn-group">
+                <button onclick="startGame()">重新开始</button>
+                <button class="btn-secondary" onclick="switchPage('rankPage')">查看排行榜</button>
+                <button class="btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <!-- 排行榜页面 -->
+        <div id="rankPage" class="page">
+            <h1>拼图游戏排行榜</h1>
+            <h3>个人历史成绩</h3>
+            <ul id="personalRank" class="rank-list"></ul>
+            <h3>总排行榜（前10名）</h3>
+            <ul id="totalRank" class="rank-list"></ul>
+            <button class="btn-secondary" onclick="switchPage('gamePage')">返回游戏</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentUser = null;
+        let timerInterval = null;
+        let startTime = null;
+        let puzzlePieces = [];
+        const EMPTY_PIECE = 9; // 空白块标识
+
+        // 页面切换
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            // 切换到排行榜时加载数据
+            if (pageId === 'rankPage') {
+                loadRankData();
+            }
+        }
+
+        // 初始化本地存储（用户数据和排名数据）
+        function initLocalStorage() {
+            if (!localStorage.getItem('puzzleUsers')) {
+                localStorage.setItem('puzzleUsers', JSON.stringify({}));
+            }
+            if (!localStorage.getItem('puzzleRanks')) {
+                localStorage.setItem('puzzleRanks', JSON.stringify([]));
+            }
+        }
+
+        // 登录功能
+        function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errorEl.textContent = '用户名和密码不能为空';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('puzzleUsers'));
+            if (users[username] && users[username] === password) {
+                currentUser = username;
+                document.getElementById('currentUser').textContent = username;
+                errorEl.textContent = '';
+                switchPage('gamePage');
+                startGame(); // 登录后自动开始游戏
+            } else {
+                errorEl.textContent = '用户名或密码错误';
+            }
+        }
+
+        // 注册功能
+        function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const confirmPwd = document.getElementById('regConfirmPwd').value.trim();
+            const errorEl = document.getElementById('registerError');
+
+            if (!username || !password || !confirmPwd) {
+                errorEl.textContent = '所有字段不能为空';
+                return;
+            }
+            if (password !== confirmPwd) {
+                errorEl.textContent = '两次输入的密码不一致';
+                return;
+            }
+            if (username.length < 3 || password.length < 6) {
+                errorEl.textContent = '用户名至少3位，密码至少6位';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('puzzleUsers'));
+            if (users[username]) {
+                errorEl.textContent = '该用户名已存在';
+                return;
+            }
+
+            // 保存新用户
+            users[username] = password;
+            localStorage.setItem('puzzleUsers', JSON.stringify(users));
+            errorEl.textContent = '注册成功！请登录';
+            // 清空输入框
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regConfirmPwd').value = '';
+            // 自动切换到登录页
+            setTimeout(() => switchPage('loginPage'), 1000);
+        }
+
+        // 修改密码功能
+        function changePassword() {
+            const username = document.getElementById('changeUsername').value.trim();
+            const oldPwd = document.getElementById('oldPassword').value.trim();
+            const newPwd = document.getElementById('newPassword').value.trim();
+            const errorEl = document.getElementById('changePwdError');
+
+            if (!username || !oldPwd || !newPwd) {
+                errorEl.textContent = '所有字段不能为空';
+                return;
+            }
+            if (newPwd.length < 6) {
+                errorEl.textContent = '新密码至少6位';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('puzzleUsers'));
+            if (!users[username]) {
+                errorEl.textContent = '该用户名不存在';
+                return;
+            }
+            if (users[username] !== oldPwd) {
+                errorEl.textContent = '原密码错误';
+                return;
+            }
+
+            // 更新密码
+            users[username] = newPwd;
+            localStorage.setItem('puzzleUsers', JSON.stringify(users));
+            errorEl.textContent = '密码修改成功！请重新登录';
+            // 清空输入框
+            document.getElementById('changeUsername').value = '';
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            // 自动切换到登录页
+            setTimeout(() => switchPage('loginPage'), 1000);
+        }
+
+        // 退出登录
+        function logout() {
+            clearInterval(timerInterval);
+            currentUser = null;
+            document.getElementById('timer').textContent = '00:00';
+            switchPage('loginPage');
+            // 清空登录输入框
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // 生成随机拼图（打乱顺序）
+        function generateRandomPuzzle() {
+            // 初始化1-8的数字和空白块9
+            puzzlePieces = [1, 2, 3, 4, 5, 6, 7, 8, EMPTY_PIECE];
+            let attempts = 0;
+
+            // 打乱顺序（确保可解，通过交换次数控制）
+            do {
+                puzzlePieces.sort(() => Math.random() - 0.5);
+                attempts++;
+            } while (!isPuzzleSolvable() && attempts < 100);
+
+            renderPuzzle();
+        }
+
+        // 判断拼图是否可解（奇数逆序数不可解，偶数可解）
+        function isPuzzleSolvable() {
+            let inversions = 0;
+            const piecesWithoutEmpty = puzzlePieces.filter(p => p !== EMPTY_PIECE);
+
+            for (let i = 0; i < piecesWithoutEmpty.length; i++) {
+                for (let j = i + 1; j < piecesWithoutEmpty.length; j++) {
+                    if (piecesWithoutEmpty[i] > piecesWithoutEmpty[j]) {
+                        inversions++;
+                    }
+                }
+            }
+
+            // 3x3拼图：逆序数为偶数则可解
+            return inversions % 2 === 0;
+        }
+
+        // 渲染拼图
+        function renderPuzzle() {
+            const container = document.getElementById('puzzleContainer');
+            container.innerHTML = '';
+
+            puzzlePieces.forEach(piece => {
+                const div = document.createElement('div');
+                div.className = `puzzle-piece ${piece === EMPTY_PIECE ? 'empty' : ''}`;
+                if (piece !== EMPTY_PIECE) {
+                    div.textContent = piece;
+                    div.onclick = () => movePiece(piece);
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // 移动拼图块
+        function movePiece(piece) {
+            const emptyIndex = puzzlePieces.indexOf(EMPTY_PIECE);
+            const pieceIndex = puzzlePieces.indexOf(piece);
+            const row = Math.floor(pieceIndex / 3);
+            const col = pieceIndex % 3;
+            const emptyRow = Math.floor(emptyIndex / 3);
+            const emptyCol = emptyIndex % 3;
+
+            // 判断是否可移动（上下左右相邻）
+            if (
+                (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+                (Math.abs(col - emptyCol) === 1 && row === emptyRow)
+            ) {
+                // 交换位置
+                [puzzlePieces[pieceIndex], puzzlePieces[emptyIndex]] = [puzzlePieces[emptyIndex], puzzlePieces[pieceIndex]];
+                renderPuzzle();
+
+                // 检查是否完成
+                if (isPuzzleCompleted()) {
+                    completeGame();
+                }
+            }
+        }
+
+        // 检查拼图是否完成
+        function isPuzzleCompleted() {
+            return puzzlePieces.join(',') === '1,2,3,4,5,6,7,8,9';
+        }
+
+        // 开始游戏
+        function startGame() {
+            // 重置计时器
+            clearInterval(timerInterval);
+            document.getElementById('timer').textContent = '00:00';
+            // 生成新拼图
+            generateRandomPuzzle();
+            // 记录开始时间
+            startTime = new Date().getTime();
+            // 启动计时器
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+            const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+
+        // 完成游戏（记录成绩）
+        function completeGame() {
+            clearInterval(timerInterval);
+            const elapsedTime = document.getElementById('timer').textContent;
+            const [minutes, seconds] = elapsedTime.split(':').map(Number);
+            const totalSeconds = minutes * 60 + seconds;
+
+            // 保存个人成绩和总排名
+            const ranks = JSON.parse(localStorage.getItem('puzzleRanks'));
+            const newRecord = {
+                username: currentUser,
+                time: elapsedTime,
+                totalSeconds: totalSeconds,
+                date: new Date().toLocaleString()
+            };
+
+            ranks.push(newRecord);
+            localStorage.setItem('puzzleRanks', JSON.stringify(ranks));
+
+            // 提示完成
+            alert(`恭喜！拼图完成！用时：${elapsedTime}\n成绩已记录到排行榜`);
+            // 重新开始游戏
+            startGame();
+        }
+
+        // 加载排名数据
+        function loadRankData() {
+            const ranks = JSON.parse(localStorage.getItem('puzzleRanks'));
+            const personalRankEl = document.getElementById('personalRank');
+            const totalRankEl = document.getElementById('totalRank');
+
+            // 清空列表
+            personalRankEl.innerHTML = '';
+            totalRankEl.innerHTML = '';
+
+            // 个人历史成绩（按时间升序排列）
+            const personalRanks = ranks
+                .filter(record => record.username === currentUser)
+                .sort((a, b) => a.totalSeconds - b.totalSeconds);
+
+            if (personalRanks.length === 0) {
+                personalRankEl.innerHTML = '<li class="rank-item">暂无历史成绩</li>';
+            } else {
+                personalRanks.forEach((record, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'rank-item';
+                    li.innerHTML = `
+                        <span>第${index + 1}名</span>
+                        <span>时间：${record.time}</span>
+                        <span>日期：${record.date}</span>
+                    `;
+                    personalRankEl.appendChild(li);
+                });
+            }
+
+            // 总排行榜（去重取每个用户最好成绩，按时间升序排列前10）
+            const userBestRanks = {};
+            ranks.forEach(record => {
+                if (!userBestRanks[record.username] || record.totalSeconds < userBestRanks[record.username].totalSeconds) {
+                    userBestRanks[record.username] = record;
+                }
+            });
+
+            const totalRanks = Object.values(userBestRanks)
+                .sort((a, b) => a.totalSeconds - b.totalSeconds)
+                .slice(0, 10);
+
+            if (totalRanks.length === 0) {
+                totalRankEl.innerHTML = '<li class="rank-item">暂无排名数据</li>';
+            } else {
+                totalRanks.forEach((record, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'rank-item';
+                    li.innerHTML = `
+                        <span>第${index + 1}名</span>
+                        <span>用户：${record.username}</span>
+                        <span>最佳时间：${record.time}</span>
+                    `;
+                    totalRankEl.appendChild(li);
+                });
+            }
+        }
+
+        // 初始化
+        window.onload = function() {
+            initLocalStorage();
+            generateRandomPuzzle(); // 初始化拼图显示
+        };
+    </script>
+</body>
+</html>
